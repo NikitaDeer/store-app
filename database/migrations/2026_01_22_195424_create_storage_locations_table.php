@@ -9,13 +9,15 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('storage_locations', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
-    }
+public function up(): void
+{
+    Schema::create('storage_locations', function (Blueprint $table) {
+        $table->id();
+        $table->string('name'); // "Главный склад", "Магазин на Ленина"
+        $table->string('type'); // 'store' или 'warehouse'
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.

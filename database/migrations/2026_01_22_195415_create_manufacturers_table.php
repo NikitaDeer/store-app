@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('manufacturers', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('country_id')->constrained()->cascadeOnDelete(); // Связь со страной
+            $table->string('name'); // Bosch, Samsung
             $table->timestamps();
         });
     }
