@@ -7,6 +7,8 @@ use Illuminate\Database\Seeder;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\ManufacturerSeeder;
+use Database\Seeders\ProductSeeder;
+use Database\Seeders\StorageLocationSeeder;
 use Database\Seeders\UserSeeder;
 
 class DatabaseSeeder extends Seeder
@@ -22,5 +24,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CategorySeeder::class);
         $this->call(CountrySeeder::class);
         $this->call(ManufacturerSeeder::class);
+        $this->call(StorageLocationSeeder::class);
+        $this->call(ProductSeeder::class);
     }
 }
