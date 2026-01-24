@@ -2,47 +2,73 @@
 
 namespace App\Filament\Resources\StorageLocations;
 
-use App\Filament\Resources\StorageLocations\Pages\CreateStorageLocation;
-use App\Filament\Resources\StorageLocations\Pages\EditStorageLocation;
-use App\Filament\Resources\StorageLocations\Pages\ListStorageLocations;
-use App\Filament\Resources\StorageLocations\Schemas\StorageLocationForm;
-use App\Filament\Resources\StorageLocations\Tables\StorageLocationsTable;
+use App\Filament\Resources\StorageLocations\Pages;
 use App\Models\StorageLocation;
-use BackedEnum;
-use Filament\Resources\Resource;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
+use Filament\Resources\Resource;
+use Filament\Tables;
 use Filament\Tables\Table;
+use BackedEnum;
 
 class StorageLocationResource extends Resource
 {
     protected static ?string $model = StorageLocation::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-office';
 
-    public static function form(Schema $schema): Schema
+    protected static ?string $navigationLabel = 'Склады и Магазины';
+
+    public static function schema(Schema $schema): Schema
     {
-        return StorageLocationForm::configure($schema);
+        return $schema
+            ->schema([
+                Forms\Components\TextInput::make('name')
+                    ->label('Название места')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\Select::make('type')
+                    ->label('Тип')
+                    ->options([
+                        'store' => 'Магазин',
+                        'warehouse' => 'Склад',
+                    ])
+                    ->required(),
+            ]);
     }
 
     public static function table(Table $table): Table
     {
-        return StorageLocationsTable::configure($table);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Название')
+                    ->sortable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Тип')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'store' => 'Магазин',
+                        'warehouse' => 'Склад',
+                        default => $state,
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'store' => 'success',
+                        'warehouse' => 'warning',
+                        default => 'gray',
+                    }),
+            ])
+            ->filters([]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListStorageLocations::route('/'),
-            'create' => CreateStorageLocation::route('/create'),
-            'edit' => EditStorageLocation::route('/{record}/edit'),
+            'index' => Pages\ListStorageLocations::route('/'),
+            'create' => Pages\CreateStorageLocation::route('/create'),
+            'edit' => Pages\EditStorageLocation::route('/{record}/edit'),
         ];
     }
 }
