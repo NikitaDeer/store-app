@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Manufacturers;
 use App\Filament\Resources\Manufacturers\Pages;
 use App\Models\Manufacturer;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -20,7 +19,7 @@ class ManufacturerResource extends Resource
 
     protected static ?string $navigationLabel = 'Производители';
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([

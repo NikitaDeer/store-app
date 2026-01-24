@@ -5,7 +5,6 @@ namespace App\Filament\Resources\StorageLocations;
 use App\Filament\Resources\StorageLocations\Pages;
 use App\Models\StorageLocation;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -20,7 +19,7 @@ class StorageLocationResource extends Resource
 
     protected static ?string $navigationLabel = 'Склады и Магазины';
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([

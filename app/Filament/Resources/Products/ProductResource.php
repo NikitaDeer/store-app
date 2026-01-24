@@ -5,12 +5,11 @@ namespace App\Filament\Resources\Products;
 use App\Filament\Resources\Products\Pages;
 use App\Models\Product;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
@@ -34,7 +33,7 @@ class ProductResource extends Resource
 
     protected static ?string $navigationLabel = 'Товары';
 
-    public static function schema(Schema $schema): Schema
+    public static function form(Schema $schema): Schema
     {
         return $schema
             ->schema([
@@ -59,7 +58,7 @@ class ProductResource extends Resource
                     ])->columns(2),
 
                 // Секция 2: Цены и Даты
-                Forms\Components\Section::make('Параметры и Цены')
+                Section::make('Параметры и Цены')
                     ->schema([
                         Forms\Components\DatePicker::make('manufacture_date')
                             ->label('Дата изготовления')
@@ -87,7 +86,7 @@ class ProductResource extends Resource
                     ])->columns(3),
 
                 // Секция 3: Характеристики
-                Forms\Components\Section::make('Технические параметры')
+                Section::make('Технические параметры')
                     ->schema([
                         Forms\Components\Repeater::make('specifications')
                             ->relationship()
@@ -105,7 +104,7 @@ class ProductResource extends Resource
                             ->addActionLabel('Добавить параметр'),
                     ]),
                     // Секция 4: Остатки
-                Forms\Components\Section::make('Наличие на складах')
+                Section::make('Наличие на складах')
                     ->schema([
                         Forms\Components\Repeater::make('stocks')
                             ->relationship()
