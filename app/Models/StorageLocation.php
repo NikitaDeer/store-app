@@ -14,4 +14,16 @@ class StorageLocation extends Model
     {
         return $this->hasMany(Stock::class);
     }
+
+    // Движения, где место хранения — источник
+    public function outgoingInventoryMovements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class, 'source_storage_location_id');
+    }
+
+    // Движения, где место хранения — назначение
+    public function incomingInventoryMovements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class, 'destination_storage_location_id');
+    }
 }

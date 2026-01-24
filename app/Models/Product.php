@@ -38,4 +38,10 @@ class Product extends Model
     {
         return $this->hasMany(Specification::class);
     }
+
+    // Движение товара (приход/расход/перемещение)
+    public function inventoryMovements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class);
+    }
 }
