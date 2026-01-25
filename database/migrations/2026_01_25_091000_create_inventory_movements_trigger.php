@@ -11,25 +11,25 @@ return new class extends Migration
     public function up(): void
     {
         DB::unprepared(<<<'SQL'
-CREATE TRIGGER trg_inventory_movements_after_insert
-AFTER INSERT ON inventory_movements
-FOR EACH ROW
+CREATE OR REPLACE FUNCTION apply_inventory_movement()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_qty INT := 0;
+    target_location_id BIGINT := NULL;
 BEGIN
-    DECLARE current_qty INT DEFAULT 0;
-    DECLARE target_location_id BIGINT DEFAULT NULL;
-
     IF NEW.type = 'in' THEN
         IF NEW.destination_storage_location_id IS NULL THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Destination storage location required for incoming movement';
+            RAISE EXCEPTION 'Destination storage location required for incoming movement';
         END IF;
 
         INSERT INTO stocks (product_id, storage_location_id, quantity, created_at, updated_at)
         VALUES (NEW.product_id, NEW.destination_storage_location_id, NEW.quantity, NOW(), NOW())
-        ON DUPLICATE KEY UPDATE quantity = quantity + NEW.quantity, updated_at = NOW();
+        ON CONFLICT (product_id, storage_location_id)
+        DO UPDATE SET quantity = stocks.quantity + EXCLUDED.quantity, updated_at = NOW();
 
-    ELSEIF NEW.type = 'out' THEN
+    ELSIF NEW.type = 'out' THEN
         IF NEW.source_storage_location_id IS NULL THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Source storage location required for outgoing movement';
+            RAISE EXCEPTION 'Source storage location required for outgoing movement';
         END IF;
 
         SELECT quantity INTO current_qty
@@ -39,11 +39,11 @@ BEGIN
         LIMIT 1;
 
         IF current_qty IS NULL THEN
-            SET current_qty = 0;
+            current_qty := 0;
         END IF;
 
         IF current_qty < NEW.quantity THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Not enough stock for outgoing movement';
+            RAISE EXCEPTION 'Not enough stock for outgoing movement';
         END IF;
 
         UPDATE stocks
@@ -51,9 +51,9 @@ BEGIN
         WHERE product_id = NEW.product_id
           AND storage_location_id = NEW.source_storage_location_id;
 
-    ELSEIF NEW.type = 'transfer' THEN
+    ELSIF NEW.type = 'transfer' THEN
         IF NEW.source_storage_location_id IS NULL OR NEW.destination_storage_location_id IS NULL THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Both source and destination required for transfer';
+            RAISE EXCEPTION 'Both source and destination required for transfer';
         END IF;
 
         SELECT quantity INTO current_qty
@@ -63,11 +63,11 @@ BEGIN
         LIMIT 1;
 
         IF current_qty IS NULL THEN
-            SET current_qty = 0;
+            current_qty := 0;
         END IF;
 
         IF current_qty < NEW.quantity THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Not enough stock for transfer';
+            RAISE EXCEPTION 'Not enough stock for transfer';
         END IF;
 
         UPDATE stocks
@@ -77,20 +77,32 @@ BEGIN
 
         INSERT INTO stocks (product_id, storage_location_id, quantity, created_at, updated_at)
         VALUES (NEW.product_id, NEW.destination_storage_location_id, NEW.quantity, NOW(), NOW())
-        ON DUPLICATE KEY UPDATE quantity = quantity + NEW.quantity, updated_at = NOW();
+        ON CONFLICT (product_id, storage_location_id)
+        DO UPDATE SET quantity = stocks.quantity + EXCLUDED.quantity, updated_at = NOW();
 
-    ELSEIF NEW.type = 'adjustment' THEN
+    ELSIF NEW.type = 'adjustment' THEN
         IF NEW.destination_storage_location_id IS NULL AND NEW.source_storage_location_id IS NULL THEN
-            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Storage location required for adjustment';
+            RAISE EXCEPTION 'Storage location required for adjustment';
         END IF;
 
-        SET target_location_id = COALESCE(NEW.destination_storage_location_id, NEW.source_storage_location_id);
+        target_location_id := COALESCE(NEW.destination_storage_location_id, NEW.source_storage_location_id);
 
         INSERT INTO stocks (product_id, storage_location_id, quantity, created_at, updated_at)
         VALUES (NEW.product_id, target_location_id, NEW.quantity, NOW(), NOW())
-        ON DUPLICATE KEY UPDATE quantity = quantity + NEW.quantity, updated_at = NOW();
+        ON CONFLICT (product_id, storage_location_id)
+        DO UPDATE SET quantity = stocks.quantity + EXCLUDED.quantity, updated_at = NOW();
     END IF;
-END
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_inventory_movements_after_insert ON inventory_movements;
+
+CREATE TRIGGER trg_inventory_movements_after_insert
+AFTER INSERT ON inventory_movements
+FOR EACH ROW
+EXECUTE FUNCTION apply_inventory_movement();
 SQL);
     }
 
@@ -99,6 +111,9 @@ SQL);
      */
     public function down(): void
     {
-        DB::unprepared('DROP TRIGGER IF EXISTS trg_inventory_movements_after_insert');
+        DB::unprepared(<<<'SQL'
+DROP TRIGGER IF EXISTS trg_inventory_movements_after_insert ON inventory_movements;
+DROP FUNCTION IF EXISTS apply_inventory_movement();
+SQL);
     }
 };
