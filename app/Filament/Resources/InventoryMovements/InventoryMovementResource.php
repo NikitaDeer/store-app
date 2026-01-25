@@ -12,6 +12,10 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+
 class InventoryMovementResource extends Resource
 {
     protected static ?string $model = InventoryMovement::class;
@@ -130,11 +134,11 @@ class InventoryMovementResource extends Resource
                     ]),
             ])
             ->recordActions([
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
             ])
             ->toolbarActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
