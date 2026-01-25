@@ -4,8 +4,10 @@ namespace App\Filament\Resources\InventoryMovements;
 
 use App\Filament\Resources\InventoryMovements\Pages;
 use App\Models\InventoryMovement;
+use App\Models\Stock;
 use BackedEnum;
 use Filament\Forms;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -44,11 +46,36 @@ class InventoryMovementResource extends Resource
                                 'transfer' => 'Перемещение',
                                 'adjustment' => 'Корректировка',
                             ])
+                            ->reactive()
                             ->required(),
                         Forms\Components\TextInput::make('quantity')
                             ->label('Количество')
                             ->numeric()
                             ->minValue(1)
+                            ->rules([
+                                fn (Get $get) => function (string $attribute, $value, callable $fail) use ($get): void {
+                                    $type = $get('type');
+                                    $productId = $get('product_id');
+                                    $sourceId = $get('source_storage_location_id');
+
+                                    if (!in_array($type, ['out', 'transfer'], true)) {
+                                        return;
+                                    }
+
+                                    if (!$productId || !$sourceId || !$value) {
+                                        return;
+                                    }
+
+                                    $available = Stock::query()
+                                        ->where('product_id', $productId)
+                                        ->where('storage_location_id', $sourceId)
+                                        ->value('quantity') ?? 0;
+
+                                    if ((int) $value > (int) $available) {
+                                        $fail("Недостаточно остатка на складе. Доступно: {$available}");
+                                    }
+                                },
+                            ])
                             ->required(),
                         Forms\Components\DateTimePicker::make('moved_at')
                             ->label('Дата движения')
@@ -61,12 +88,14 @@ class InventoryMovementResource extends Resource
                             ->relationship('sourceStorageLocation', 'name')
                             ->label('Откуда')
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->required(fn (Get $get): bool => in_array($get('type'), ['out', 'transfer'], true)),
                         Forms\Components\Select::make('destination_storage_location_id')
                             ->relationship('destinationStorageLocation', 'name')
                             ->label('Куда')
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->required(fn (Get $get): bool => in_array($get('type'), ['in', 'transfer'], true)),
                         Forms\Components\Select::make('user_id')
                             ->relationship('user', 'name')
                             ->label('Пользователь')
@@ -78,6 +107,19 @@ class InventoryMovementResource extends Resource
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
+                Section::make('Проверка')
+                    ->schema([
+                        Forms\Components\Placeholder::make('validation_hint')
+                            ->label('Подсказка')
+                            ->content(fn (Get $get): string => match ($get('type')) {
+                                'in' => 'Укажите склад назначения.',
+                                'out' => 'Укажите склад-источник с достаточным остатком.',
+                                'transfer' => 'Укажите склад-источник и склад назначения.',
+                                'adjustment' => 'Укажите склад-источник или склад назначения.',
+                                default => 'Выберите тип операции.',
+                            }),
+                    ])
+                    ->hidden(fn (Get $get): bool => $get('type') === null),
             ]);
     }
 
