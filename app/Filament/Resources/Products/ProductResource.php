@@ -83,6 +83,10 @@ class ProductResource extends Resource
                         Forms\Components\TextInput::make('discount_reason')
                             ->label('Причина скидки')
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('min_stock')
+                            ->label('Минимальный остаток')
+                            ->numeric()
+                            ->default(5),
                     ])->columns(3),
 
                 // Секция 3: Характеристики
