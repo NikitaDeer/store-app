@@ -12,6 +12,18 @@ class InventoryMovementPolicy
 
     public function before(User $user, string $ability): ?bool
     {
+        if ($user->isAdmin() && in_array($ability, [
+            'update',
+            'delete',
+            'restore',
+            'forceDelete',
+            'deleteAny',
+            'restoreAny',
+            'forceDeleteAny',
+        ], true)) {
+            return false;
+        }
+
         return $user->isAdmin() ? true : null;
     }
 
@@ -40,12 +52,27 @@ class InventoryMovementPolicy
         return false;
     }
 
+    public function deleteAny(User $user): bool
+    {
+        return false;
+    }
+
     public function restore(User $user, InventoryMovement $inventoryMovement): bool
     {
         return false;
     }
 
+    public function restoreAny(User $user): bool
+    {
+        return false;
+    }
+
     public function forceDelete(User $user, InventoryMovement $inventoryMovement): bool
+    {
+        return false;
+    }
+
+    public function forceDeleteAny(User $user): bool
     {
         return false;
     }

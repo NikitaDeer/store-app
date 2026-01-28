@@ -14,9 +14,6 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
-use Filament\Actions\EditAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 
 class InventoryMovementResource extends Resource
 {
@@ -175,14 +172,7 @@ class InventoryMovementResource extends Resource
                         'adjustment' => 'Корректировка',
                     ]),
             ])
-            ->recordActions([
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->recordActions([]);
     }
 
     public static function getPages(): array
@@ -190,7 +180,6 @@ class InventoryMovementResource extends Resource
         return [
             'index' => Pages\ListInventoryMovements::route('/'),
             'create' => Pages\CreateInventoryMovement::route('/create'),
-            'edit' => Pages\EditInventoryMovement::route('/{record}/edit'),
         ];
     }
 }
